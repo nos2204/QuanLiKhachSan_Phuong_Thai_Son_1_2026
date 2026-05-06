@@ -2,26 +2,33 @@ import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'screens/hotel_management_screen.dart';
 import 'screens/about_screen.dart';
- 
+
 class Customer {
   final String name;
   final String id;
   final String roomAssigned;
-  Customer({required this.name, required this.id, required this.roomAssigned});
+  final int price; // Giá phòng (VNĐ/đêm)
+
+  Customer({
+    required this.name,
+    required this.id,
+    required this.roomAssigned,
+    this.price = 850000, // Mặc định 850.000đ
+  });
 }
- 
+
 class AppTheme {
   static const Color primaryGold = Color(0xFFD4AF37);
   static const Color darkBlue = Color(0xFF003366);
 }
- 
+
 void main() {
   runApp(const MyApp());
 }
- 
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
- 
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -35,23 +42,23 @@ class MyApp extends StatelessWidget {
     );
   }
 }
- 
+
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
- 
+
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
- 
+
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
- 
+
   final List<Widget> _pages = [
     const HomeScreen(),
     const HotelManagementScreen(),
     const AboutScreen(),
   ];
- 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -1,17 +1,29 @@
-# flutter_application_1
+App Quản Lý Khách Sạn
+Dự án này là một ứng dụng quản lý khách sạn cơ bản được xây dựng bằng Flutter & Dart, tập trung vào việc quản lý phòng, khách hàng và quy trình đặt phòng thông qua các thao tác CRUD.
 
-A new Flutter project.
+Thành Phần Hệ Thống
+Hệ thống được thiết kế dựa trên 3 đối tượng cốt lõi:
 
-## Getting Started
+Room (room.dart): Quản lý thông tin vật chất của khách sạn bao gồm số phòng, loại phòng, đơn giá và trạng thái (trống/đang ở).
 
-This project is a starting point for a Flutter application.
+Customer (customer.dart): Quản lý thông tin định danh của khách hàng như họ tên, số điện thoại và số CCCD.
 
-A few resources to get you started if this is your first Flutter project:
+Booking (booking.dart): Đối tượng nghiệp vụ kết nối Khách hàng với Phòng, quản lý ngày nhận phòng và tính toán tổng hóa đơn.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Màu sắc:
+Sử dụng tông màu Navy Blue (#003366) cho Header và Vàng Gold (#D4AF37) cho các thành phần điều hướng đang hoạt động.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Layout: Cấu trúc khung xương (Scaffold) cố định giúp người dùng dễ dàng làm quen với giao diện dù ở bất kỳ màn hình nào.
+
+Chức năng: Tích hợp bộ công cụ quản lý khách hàng (Thêm/Xóa) ngay trong tab Content.
+
+Chức Năng Các Màn Hình
+Home (Trang chủ): Giới thiệu thương hiệu khách sạn với hình ảnh minh họa từ Network.
+
+Content (Quản lý): Danh sách khách hàng thuê phòng, cho phép thêm mới hoặc xóa dữ liệu trực tiếp.
+
+About (Thông tin): Chi tiết về các thành viên thực hiện dự án.
+
+Nguyễn Hoàng Sơn MSV:23010100 : Làm trang Content
+Nguyễn Minh phương MSV: 23010190: Làm trang About
+Nguyễn Việt Thái MSV: 23017239: Làm trang Home
