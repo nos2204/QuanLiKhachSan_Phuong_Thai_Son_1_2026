@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "822873193911",
+    "project_id": "nhs22thapril",
+    "storage_bucket": "nhs22thapril.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:822873193911:android:516eebd35d80cfe126fc32",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB5hQ-6ic6Vl90HxG4TkPgd40UztJukvFY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
