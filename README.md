@@ -29,8 +29,7 @@ Nguyễn Hoàng Sơn MSV:23010100 : Làm trang Content
 Nguyễn Minh phương MSV: 23010190: Làm trang About
 Nguyễn Việt Thái MSV: 23017239: Làm trang Home
 
-USER STORIES - HỆ THỐNG ĐẶT PHÒNG KHÁCH SẠN
-1. PROJECT USER STORIES – HỆ THỐNG QUẢN LÝ KHÁCH SẠN
+ ## USER STORIES – HỆ THỐNG QUẢN LÝ KHÁCH SẠN
 Tác nhân 1: Quản lý khách sạn
 US01 - Đăng nhập hệ thống
 
