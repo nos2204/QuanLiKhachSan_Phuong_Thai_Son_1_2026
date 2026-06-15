@@ -1,4 +1,4 @@
-App Quản Lý Khách Sạn
+# App Quản Lý Khách Sạn
 Dự án này là một ứng dụng quản lý khách sạn cơ bản được xây dựng bằng Flutter & Dart, tập trung vào việc quản lý phòng, khách hàng và quy trình đặt phòng thông qua các thao tác CRUD. 
 Cách chạy: flutter run -d web-server --web-port=3000
 
