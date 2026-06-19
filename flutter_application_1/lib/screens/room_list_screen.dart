@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import '../main.dart';
+import '../models/app_user.dart';
+import '../models/change_request.dart';
 import '../models/room.dart';
 import '../models/room_type.dart';
 import '../database/database_helper.dart';
 import '../widgets/room_card.dart';
 
 class RoomListScreen extends StatefulWidget {
-  const RoomListScreen({super.key});
+  final AppUser currentUser;
+
+  const RoomListScreen({super.key, required this.currentUser});
 
   @override
   State<RoomListScreen> createState() => _RoomListScreenState();
@@ -17,6 +21,8 @@ class _RoomListScreenState extends State<RoomListScreen> {
   List<RoomType> _roomTypes = [];
   String _selectedFilter = 'Tất cả';
   bool _isLoading = true;
+
+  bool get _isAdmin => widget.currentUser.isAdmin;
 
   final List<String> _filters = ['Tất cả', 'Trống', 'Đang thuê', 'Bảo trì'];
 
@@ -30,13 +36,19 @@ class _RoomListScreenState extends State<RoomListScreen> {
     setState(() => _isLoading = true);
     final types = await DatabaseHelper.instance.getAllRoomTypes();
     List<Room> allRooms = await DatabaseHelper.instance.getAllRooms();
-    
+
     if (_selectedFilter == 'Trống') {
-      allRooms = allRooms.where((r) => r.status == RoomStatus.available).toList();
+      allRooms = allRooms
+          .where((r) => r.status == RoomStatus.available)
+          .toList();
     } else if (_selectedFilter == 'Đang thuê') {
-      allRooms = allRooms.where((r) => r.status == RoomStatus.occupied).toList();
+      allRooms = allRooms
+          .where((r) => r.status == RoomStatus.occupied)
+          .toList();
     } else if (_selectedFilter == 'Bảo trì') {
-      allRooms = allRooms.where((r) => r.status == RoomStatus.maintenance).toList();
+      allRooms = allRooms
+          .where((r) => r.status == RoomStatus.maintenance)
+          .toList();
     }
 
     if (mounted) {
@@ -48,12 +60,34 @@ class _RoomListScreenState extends State<RoomListScreen> {
     }
   }
 
+  Future<void> _submitRoomChange(Room room, bool isEditing) async {
+    if (_isAdmin) {
+      if (isEditing) {
+        await DatabaseHelper.instance.updateRoom(room);
+      } else {
+        await DatabaseHelper.instance.insertRoom(room);
+      }
+      return;
+    }
+
+    await DatabaseHelper.instance.createChangeRequest(
+      entityType: ChangeEntityType.room,
+      action: isEditing ? ChangeAction.update : ChangeAction.create,
+      entityId: isEditing ? room.id : null,
+      payload: room.toMap(),
+      requestedBy: widget.currentUser.id!,
+      note: isEditing ? 'Đề xuất sửa phòng' : 'Đề xuất thêm phòng',
+    );
+  }
+
   void _deleteRoom(Room room) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc chắn muốn xóa phòng ${room.roomNumber} không?'),
+        content: Text(
+          'Bạn có chắc chắn muốn xóa phòng ${room.roomNumber} không?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -64,12 +98,29 @@ class _RoomListScreenState extends State<RoomListScreen> {
             onPressed: () async {
               Navigator.pop(context);
               if (room.id != null) {
-                await DatabaseHelper.instance.deleteRoom(room.id!);
-                _loadData();
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Đã xóa phòng')),
+                if (_isAdmin) {
+                  await DatabaseHelper.instance.deleteRoom(room.id!);
+                } else {
+                  await DatabaseHelper.instance.createChangeRequest(
+                    entityType: ChangeEntityType.room,
+                    action: ChangeAction.delete,
+                    entityId: room.id,
+                    payload: room.toMap(),
+                    requestedBy: widget.currentUser.id!,
+                    note: 'Đề xuất xóa phòng ${room.roomNumber}',
                   );
+                }
+                _loadData();
+                if (!_isAdmin) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Đã gửi đề xuất xóa phòng')),
+                  );
+                  return;
+                }
+                if (mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Đã xóa phòng')));
                 }
               }
             },
@@ -83,9 +134,11 @@ class _RoomListScreenState extends State<RoomListScreen> {
   void _showAddEditDialog(Room? room) {
     final isEditing = room != null;
     final formKey = GlobalKey<FormState>();
-    
+
     String number = isEditing ? room.roomNumber : '';
-    int? typeId = isEditing ? room.roomTypeId : (_roomTypes.isNotEmpty ? _roomTypes.first.id : null);
+    int? typeId = isEditing
+        ? room.roomTypeId
+        : (_roomTypes.isNotEmpty ? _roomTypes.first.id : null);
     int floor = isEditing ? room.floor : 1;
     RoomStatus status = isEditing ? room.status : RoomStatus.available;
     String desc = isEditing ? room.description : '';
@@ -93,7 +146,9 @@ class _RoomListScreenState extends State<RoomListScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(isEditing ? 'Sửa phòng ${room.roomNumber}' : 'Thêm phòng mới'),
+        title: Text(
+          isEditing ? 'Sửa phòng ${room.roomNumber}' : 'Thêm phòng mới',
+        ),
         content: SingleChildScrollView(
           child: Form(
             key: formKey,
@@ -102,22 +157,37 @@ class _RoomListScreenState extends State<RoomListScreen> {
               children: [
                 TextFormField(
                   initialValue: number,
-                  decoration: const InputDecoration(labelText: 'Số phòng', border: OutlineInputBorder()),
-                  validator: (v) => v!.isEmpty ? 'Vui lòng nhập số phòng' : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Số phòng',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) =>
+                      v!.isEmpty ? 'Vui lòng nhập số phòng' : null,
                   onSaved: (v) => number = v!,
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<int>(
                   value: typeId,
-                  decoration: const InputDecoration(labelText: 'Loại phòng', border: OutlineInputBorder()),
-                  items: _roomTypes.map((t) => DropdownMenuItem(value: t.id, child: Text(t.name))).toList(),
+                  decoration: const InputDecoration(
+                    labelText: 'Loại phòng',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: _roomTypes
+                      .map(
+                        (t) =>
+                            DropdownMenuItem(value: t.id, child: Text(t.name)),
+                      )
+                      .toList(),
                   onChanged: (v) => typeId = v,
                   validator: (v) => v == null ? 'Chọn loại phòng' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   initialValue: floor.toString(),
-                  decoration: const InputDecoration(labelText: 'Tầng', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: 'Tầng',
+                    border: OutlineInputBorder(),
+                  ),
                   keyboardType: TextInputType.number,
                   validator: (v) => v!.isEmpty ? 'Nhập tầng' : null,
                   onSaved: (v) => floor = int.tryParse(v!) ?? 1,
@@ -125,7 +195,10 @@ class _RoomListScreenState extends State<RoomListScreen> {
                 const SizedBox(height: 16),
                 DropdownButtonFormField<RoomStatus>(
                   value: status,
-                  decoration: const InputDecoration(labelText: 'Trạng thái', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: 'Trạng thái',
+                    border: OutlineInputBorder(),
+                  ),
                   items: RoomStatus.values.map((s) {
                     String label = 'Trống';
                     if (s == RoomStatus.occupied) label = 'Đang thuê';
@@ -137,7 +210,10 @@ class _RoomListScreenState extends State<RoomListScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   initialValue: desc,
-                  decoration: const InputDecoration(labelText: 'Ghi chú', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: 'Ghi chú',
+                    border: OutlineInputBorder(),
+                  ),
                   maxLines: 2,
                   onSaved: (v) => desc = v ?? '',
                 ),
@@ -146,13 +222,16 @@ class _RoomListScreenState extends State<RoomListScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.darkBlue),
             onPressed: () async {
               if (formKey.currentState!.validate()) {
                 formKey.currentState!.save();
-                
+
                 final newRoom = Room(
                   id: isEditing ? room.id : null,
                   roomNumber: number,
@@ -162,17 +241,25 @@ class _RoomListScreenState extends State<RoomListScreen> {
                   description: desc,
                 );
 
-                if (isEditing) {
-                  await DatabaseHelper.instance.updateRoom(newRoom);
-                } else {
-                  await DatabaseHelper.instance.insertRoom(newRoom);
-                }
-                
+                await _submitRoomChange(newRoom, isEditing);
+
                 if (mounted) {
                   Navigator.pop(context);
                   _loadData();
+                  if (!_isAdmin) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Đã gửi đề xuất cho admin duyệt'),
+                      ),
+                    );
+                    return;
+                  }
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(isEditing ? 'Đã cập nhật' : 'Đã thêm phòng')),
+                    SnackBar(
+                      content: Text(
+                        isEditing ? 'Đã cập nhật' : 'Đã thêm phòng',
+                      ),
+                    ),
                   );
                 }
               }
@@ -189,7 +276,10 @@ class _RoomListScreenState extends State<RoomListScreen> {
     return Scaffold(
       backgroundColor: AppTheme.bgGray,
       appBar: AppBar(
-        title: const Text('QUẢN LÝ PHÒNG', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text(
+          'QUẢN LÝ PHÒNG',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         backgroundColor: AppTheme.darkBlue,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
@@ -205,42 +295,54 @@ class _RoomListScreenState extends State<RoomListScreen> {
                 _loadData();
               }
             },
-            items: _filters.map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
+            items: _filters
+                .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+                .toList(),
           ),
           const SizedBox(width: 16),
         ],
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryGold))
-        : RefreshIndicator(
-            onRefresh: _loadData,
-            color: AppTheme.primaryGold,
-            child: _rooms.isEmpty
-              ? ListView(
-                  children: [
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.3),
-                    const Center(child: Text('Không có phòng nào.', style: TextStyle(color: Colors.grey, fontSize: 16))),
-                  ],
-                )
-              : GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.85,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                  ),
-                  itemCount: _rooms.length,
-                  itemBuilder: (context, index) {
-                    final room = _rooms[index];
-                    return RoomCard(
-                      room: room,
-                      onEdit: () => _showAddEditDialog(room),
-                      onDelete: () => _deleteRoom(room),
-                    );
-                  },
-                ),
-          ),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: AppTheme.primaryGold),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadData,
+              color: AppTheme.primaryGold,
+              child: _rooms.isEmpty
+                  ? ListView(
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.3,
+                        ),
+                        const Center(
+                          child: Text(
+                            'Không có phòng nào.',
+                            style: TextStyle(color: Colors.grey, fontSize: 16),
+                          ),
+                        ),
+                      ],
+                    )
+                  : GridView.builder(
+                      padding: const EdgeInsets.all(16),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.85,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                          ),
+                      itemCount: _rooms.length,
+                      itemBuilder: (context, index) {
+                        final room = _rooms[index];
+                        return RoomCard(
+                          room: room,
+                          onEdit: () => _showAddEditDialog(room),
+                          onDelete: () => _deleteRoom(room),
+                        );
+                      },
+                    ),
+            ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppTheme.primaryGold,
         onPressed: () => _showAddEditDialog(null),

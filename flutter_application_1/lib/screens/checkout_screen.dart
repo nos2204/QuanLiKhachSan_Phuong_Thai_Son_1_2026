@@ -3,6 +3,7 @@ import '../main.dart';
 import '../models/booking.dart';
 import '../database/database_helper.dart';
 
+// Man hinh Tra phong va Thanh toan
 class CheckoutScreen extends StatefulWidget {
   final Booking booking;
   const CheckoutScreen({super.key, required this.booking});
@@ -27,6 +28,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return '${buf.toString().split('').reversed.join()}đ';
   }
 
+  // Ham xu ly tra phong, goi DatabaseHelper de cap nhat trang thai va luu Hoa don
   Future<void> _processCheckout() async {
     setState(() => _isProcessing = true);
     
@@ -173,7 +175,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             
             const SizedBox(height: 24),
             
-            // Payment Method
+            // Nut bam chon phuong thuc thanh toan
             const Align(
               alignment: Alignment.centerLeft,
               child: Text('Phương thức thanh toán', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -210,9 +212,50 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ],
             ),
             
-            const SizedBox(height: 40),
+            const SizedBox(height: 24),
             
-            // Action Button
+            if (_paymentMethod == 'transfer') ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.primaryGold, width: 2),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    const Text('Quét mã QR để thanh toán', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.darkBlue)),
+                    const SizedBox(height: 16),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        'https://img.vietqr.io/image/MB-0855670748-compact.png?amount=${widget.booking.totalAmount.toInt()}&addInfo=Thanh%20toan%20phong%20${widget.booking.roomNumber}&accountName=NGUYEN%20VIET%20THAI',
+                        height: 280,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 200,
+                            alignment: Alignment.center,
+                            child: const Text('Không thể tải mã QR.\nVui lòng kiểm tra mạng.', textAlign: TextAlign.center, style: TextStyle(color: Colors.red)),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('Chủ tài khoản: NGUYEN VIET THAI', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    const Text('Số tài khoản: 0855670748', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    const Text('Ngân hàng: MB Bank', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+            
+            // Nut bam Xac nhan thanh toan
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

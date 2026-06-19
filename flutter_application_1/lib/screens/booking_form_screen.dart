@@ -5,6 +5,7 @@ import '../models/room.dart';
 import '../models/booking.dart';
 import '../database/database_helper.dart';
 
+// Man hinh Form tao Don dat phong moi
 class BookingFormScreen extends StatefulWidget {
   const BookingFormScreen({super.key});
 
@@ -13,9 +14,10 @@ class BookingFormScreen extends StatefulWidget {
 }
 
 class _BookingFormScreenState extends State<BookingFormScreen> {
+  // Bien quan ly buoc hien tai cua form Stepper
   int _currentStep = 0;
   
-  // Step 1: Customer
+  // Buoc 1: Thong tin khach hang
   List<Customer> _customers = [];
   Customer? _selectedCustomer;
   bool _isNewCustomer = false;
@@ -24,15 +26,15 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
   String _newCustPhone = '';
   String _newCustIdCard = '';
 
-  // Step 2: Room
+  // Buoc 2: Chon phong
   List<Room> _availableRooms = [];
   Room? _selectedRoom;
 
-  // Step 3: Dates
+  // Buoc 3: Thoi gian nhan/tra phong
   DateTime _checkInDate = DateTime.now();
   DateTime _checkOutDate = DateTime.now().add(const Duration(days: 1));
   
-  // Step 4: Note
+  // Buoc 4: Ghi chu
   final TextEditingController _noteController = TextEditingController();
 
   @override
@@ -52,11 +54,13 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
     }
   }
 
+  // Tinh tong so dem luu tru
   int get _nights {
     final diff = _checkOutDate.difference(_checkInDate).inDays;
     return diff > 0 ? diff : 1;
   }
 
+  // Tinh tong tien du kien
   double get _totalAmount {
     if (_selectedRoom == null || _selectedRoom!.roomTypePrice == null) return 0;
     return _selectedRoom!.roomTypePrice! * _nights;
@@ -74,6 +78,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
     return '${buf.toString().split('').reversed.join()}đ';
   }
 
+  // Ham xu ly Submit dat phong
   Future<void> _submitBooking() async {
     if (_selectedRoom == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng chọn phòng!')));
